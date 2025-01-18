@@ -1,0 +1,123 @@
+#include <BLEDevice.h>
+#include <BLEScan.h>
+#include <BLEAdvertisedDevice.h>
+#include <BLEClient.h>
+
+BLEClient* pClient;
+BLEScan* pBLEScan;
+
+void setup() {
+  Serial.begin(115200);
+  BLEDevice::init("")#include <BLEDevice.h>
+#include <BLEScan.h>
+#include <BLEAdvertisedDevice.h>
+#include <BLEClient.h>
+
+BLEClient* pClient;
+BLEScan* pBLEScan;
+
+void setup() {
+  Serial.begin(115200);
+  BLEDevice::init("");
+
+  pBLEScan = BLEDevice::getScan();
+  pBLEScan->setAdvertisedDeviceCallbacks(new MyAdvertisedDeviceCallbacks());
+  pBLEScan->setActiveScan(true);
+  pBLEScan->start(30);
+}
+
+void loop() {
+  // Nothing to do here, everything is handled in the callbacks
+}
+
+class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
+  void onResult(BLEAdvertisedDevice advertisedDevice) {
+    Serial.printf("Advertised Device: %s \n", advertisedDevice.toString().c_str());
+    
+    // Check if the advertised device is a Keiser bike
+    if (advertisedDevice.haveName() && advertisedDevice.getName() == "Keiser M3i") {
+      Serial.println("Keiser bike found!");
+      pBLEScan->stop();
+      
+      pClient = BLEDevice::createClient();
+      pClient->connect(&advertisedDevice);
+      
+      // Assuming the Keiser bike uses a standard BLE service UUID for cycling speed and cadence
+      BLERemoteService* pRemoteService = pClient->getService(BLEUUID("00001816-0000-1000-8000-00805f9b34fb"));
+      if (pRemoteService == nullptr) {
+        Serial.print("Failed to find our service UUID: ");
+        return;
+      }
+
+      BLERemoteCharacteristic* pRemoteCharacteristic = pRemoteService->getCharacteristic(BLEUUID("00002a5b-0000-1000-8000-00805f9b34fb"));
+      if (pRemoteCharacteristic == nullptr) {
+        Serial.print("Failed to find our characteristic UUID: ");
+        return;
+      }
+
+      if(pRemoteCharacteristic->canNotify()) {
+        pRemoteCharacteristic->registerForNotify(notifyCallback);
+      }
+    }
+  }
+};
+
+void notifyCallback(BLERemoteCharacteristic* pBLERemoteCharacteristic, uint8_t* pData, size_t length, bool isNotify) {
+  Serial.print("Notification received: ");
+  for (int i = 0; i < length; i++) {
+    Serial.print(pData[i]);
+    Serial.print(" ");
+  }
+  Serial.println();
+};
+
+  pBLEScan = BLEDevice::getScan();
+  pBLEScan->setAdvertisedDeviceCallbacks(new MyAdvertisedDeviceCallbacks());
+  pBLEScan->setActiveScan(true);
+  pBLEScan->start(30);
+}
+
+void loop() {
+  // Nothing to do here, everything is handled in the callbacks
+}
+
+class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
+  void onResult(BLEAdvertisedDevice advertisedDevice) {
+    Serial.printf("Advertised Device: %s \n", advertisedDevice.toString().c_str());
+    
+    // Check if the advertised device is a Keiser bike
+    if (advertisedDevice.haveName() && advertisedDevice.getName() == "Keiser M3i") {
+      Serial.println("Keiser bike found!");
+      pBLEScan->stop();
+      
+      pClient = BLEDevice::createClient();
+      pClient->connect(&advertisedDevice);
+      
+      // Assuming the Keiser bike uses a standard BLE service UUID for cycling speed and cadence
+      BLERemoteService* pRemoteService = pClient->getService(BLEUUID("00001816-0000-1000-8000-00805f9b34fb"));
+      if (pRemoteService == nullptr) {
+        Serial.print("Failed to find our service UUID: ");
+        return;
+      }
+
+      BLERemoteCharacteristic* pRemoteCharacteristic = pRemoteService->getCharacteristic(BLEUUID("00002a5b-0000-1000-8000-00805f9b34fb"));
+      if (pRemoteCharacteristic == nullptr) {
+        Serial.print("Failed to find our characteristic UUID: ");
+        return;
+      }
+
+      if(pRemoteCharacteristic->canNotify()) {
+        pRemoteCharacteristic->registerForNotify(notifyCallback);
+      }
+    }
+  }
+};
+
+void notifyCallback(BLERemoteCharacteristic* pBLERemoteCharacteristic, uint8_t* pData, size_t length, bool isNotify) {
+  Serial.print("Notification received: ");
+  for (int i = 0; i < length; i++) {
+    Serial.print(pData[i]);
+    Serial.print(" ");
+  }
+  Serial.println();
+}
